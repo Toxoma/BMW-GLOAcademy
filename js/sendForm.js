@@ -1,0 +1,72 @@
+const server = 'https://jsonplaceholder.typicode.com/posts'
+
+const sendData = (data, callBack, falseCallBack) => {
+    const request = new XMLHttpRequest();
+    request.open('POST', server);
+
+    request.addEventListener('readystatechange', () => {
+        if (request.readyState !== 4) return;
+        if (request.status === 200 || request.status === 201) {
+            const response = JSON.parse(request.responseText)
+            callBack(response.id);
+        } else {
+            falseCallBack(request.status)
+            throw new Error(request.status)
+        }
+    });
+    request.send(data);
+}
+
+
+const formHandler = (form) => {
+
+    const smallElem = document.createElement('small');
+    form.append(smallElem);
+
+    form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const data = {};
+        let flag = true;
+        const btnSubmit = form.querySelector('.button[type="submit"]')
+
+        for (const elem of form.elements) {
+            const { name, value } = elem;
+            if (name) {
+                if (value.trim()) {
+                    elem.style.border = ''
+                    data[name] = value
+                } else {
+                    elem.style.border = '1px solid red'
+                    elem.value = ''
+                    flag = false;
+                }
+            }
+        }
+
+        if (!flag) {
+            smallElem.style.color = 'red';
+            return smallElem.textContent = 'Заполните поля!!!';
+        }
+
+        sendData(JSON.stringify(data), (id) => {
+            smallElem.innerHTML = 'Номер вашей заявки:<br>' + id;
+            smallElem.style.color = 'green';
+            btnSubmit.disabled = true;
+            setTimeout(() => {
+                smallElem.textContent = "";
+                btnSubmit.disabled = false;
+            }, 5000)
+        }, (err) => {
+            smallElem.textContent = 'Технические неполадки, ожидайте: ' + err;
+            smallElem.style.color = 'red'
+        });
+
+        form.reset();
+    })
+}
+
+export default function sendForm() {
+    const formElems = document.querySelectorAll('.form');
+
+    formElems.forEach(formHandler)
+}
